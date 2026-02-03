@@ -1,7 +1,18 @@
 import { Popover, Slider, Tooltip } from '@/components'
 import { useSongScrubTimes } from '@/features/controls'
 import { usePlayer } from '@/features/player'
-import { Check, Gauge, Hourglass, Metronome, Pause, Play, Repeat, SkipBack, Volume2 } from '@/icons'
+import {
+  Check,
+  Gauge,
+  Hand,
+  Hourglass,
+  Metronome,
+  Pause,
+  Play,
+  Repeat,
+  SkipBack,
+  Volume2,
+} from '@/icons'
 import { round } from '@/utils'
 import clsx from 'clsx'
 import { useAtomValue } from 'jotai'
@@ -20,6 +31,8 @@ type TransportBarProps = {
   onToggleWaiting: () => void
   isMetronomeOn: boolean
   onToggleMetronome: () => void
+  handMode: 'left' | 'right' | 'both'
+  onHandChange: (mode: 'left' | 'right' | 'both') => void
 }
 
 export default function TransportBar({
@@ -33,6 +46,8 @@ export default function TransportBar({
   onToggleWaiting,
   isMetronomeOn,
   onToggleMetronome,
+  handMode,
+  onHandChange,
 }: TransportBarProps) {
   const player = usePlayer()
   const { currentTime, duration } = useSongScrubTimes()
@@ -42,6 +57,7 @@ export default function TransportBar({
   const isBpmModified = Math.abs(bpmModifier - 1) > 0.001
 
   const speedOptions = getSpeedPresetOptions(bpmModifier)
+  const handLabel = handMode === 'both' ? 'Both' : handMode === 'left' ? 'Left' : 'Right'
 
   return (
     <div className="flex h-12 items-center justify-between border-t border-[#23242b] bg-[#141419] px-4 text-gray-200">
@@ -106,6 +122,41 @@ export default function TransportBar({
             content="Wait"
             onPress={onToggleWaiting}
           />
+          <MenuTrigger>
+            <TooltipTrigger>
+              <Button
+                className={clsx(
+                  'flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-medium transition',
+                  'border-transparent bg-[#1e2028] text-gray-300 hover:bg-[#232633]',
+                )}
+              >
+                <Hand className="h-3.5 w-3.5 text-gray-400" />
+                {handLabel}
+              </Button>
+              <Tooltip>Active hands</Tooltip>
+            </TooltipTrigger>
+            <Popover placement="bottom" className="min-w-[96px] p-0.5 text-sm">
+              <Menu className="outline-none" onAction={(key) => onHandChange(key as any)}>
+                {['both', 'left', 'right'].map((mode) => {
+                  const isSelected = mode === handMode
+                  return (
+                    <MenuItem
+                      id={mode}
+                      key={mode}
+                      className={clsx(
+                        'flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition outline-none',
+                        'data-[focused]:bg-zinc-700 data-[pressed]:bg-zinc-700',
+                        isSelected && 'bg-zinc-800 text-white',
+                      )}
+                    >
+                      {mode === 'both' ? 'Both' : mode === 'left' ? 'Left' : 'Right'}
+                      {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
+                    </MenuItem>
+                  )
+                })}
+              </Menu>
+            </Popover>
+          </MenuTrigger>
           <MenuTrigger>
             <TooltipTrigger>
               <Button

@@ -1,23 +1,33 @@
-import React, { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export default function useRAFLoop(fn: Function) {
-  const requestRef: any = React.useRef(null)
-  const previousTimeRef: any = React.useRef(null)
+  const requestRef = useRef<number | null>(null)
+  const previousTimeRef = useRef<number | null>(null)
+  const fnRef = useRef(fn)
+
+  useEffect(() => {
+    fnRef.current = fn
+  }, [fn])
 
   const animate = useCallback(
     (time: number) => {
-      if (previousTimeRef.current !== undefined) {
+      if (previousTimeRef.current !== null) {
         const deltaTime = time - previousTimeRef.current
-        fn(deltaTime)
+        fnRef.current?.(deltaTime)
       }
       previousTimeRef.current = time
       requestRef.current = requestAnimationFrame(animate)
     },
-    [fn],
+    [],
   )
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(requestRef.current)
+    return () => {
+      if (requestRef.current !== null) {
+        cancelAnimationFrame(requestRef.current)
+      }
+      previousTimeRef.current = null
+    }
   }, [animate]) // Make sure the effect runs only once
 }

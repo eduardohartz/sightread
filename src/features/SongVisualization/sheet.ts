@@ -26,9 +26,11 @@ import {
   getKeyDetails,
   getNote,
   glyphs,
+  isBlack,
   transposeMidi,
 } from '../theory'
 import { GivenState } from './canvas-renderer'
+import { HAND_COLORS } from './handColors'
 import { CanvasItem, getItemsInView, Viewport } from './utils'
 
 const TEXT_FONT = 'Arial'
@@ -182,18 +184,24 @@ function getGameColorPrefix(
 ) {
   const playNotesLineX = getPlayNotesLineX(state)
   const isPlayingNote = canvasX <= playNotesLineX
+  const handPrimary = getHandColorPrefix(state, note, 'primary')
+  const handDim = getHandColorPrefix(state, note, 'dim')
+  const handHover = getHandColorPrefix(state, note, 'hover')
+  const baseColor = coloredNotes ? getNoteColor(true, step) : handPrimary ?? colorMap.primary
+  const dimColor = coloredNotes ? getNoteColor(true, step) : handDim ?? colorMap.black
+  const hoverColor = coloredNotes ? getNoteColor(true, step) : handHover ?? colorMap.hover
 
   if (
     isHitNote(state.player, note) &&
     midiState.getPressedNotes().has(getTransposedMidi(state, note))
   ) {
-    return coloredNotes ? getNoteColor(true, step) : colorMap.hover
+    return hoverColor
   } else if (isMissedNote(state.player, note)) {
     return colorMap.disabled
   } else if (isPlayingNote) {
-    return coloredNotes ? getNoteColor(true, step) : colorMap.primary
+    return baseColor
   }
-  return coloredNotes ? getNoteColor(true, step) : colorMap.black
+  return dimColor
 }
 
 function getLearnSongColorPrefix(
@@ -205,12 +213,14 @@ function getLearnSongColorPrefix(
 ) {
   const playNotesLineX = getPlayNotesLineX(state)
   const isPlayingNote = canvasX <= playNotesLineX
+  const handPrimary = getHandColorPrefix(state, note, 'primary')
+  const handDim = getHandColorPrefix(state, note, 'dim')
 
   if (isPlayingNote) {
-    return coloredNotes ? getNoteColor(true, step) : colorMap.primary
+    return coloredNotes ? getNoteColor(true, step) : handPrimary ?? colorMap.primary
   }
 
-  return getNoteColor(coloredNotes, step)
+  return coloredNotes ? getNoteColor(coloredNotes, step) : handDim ?? colorMap.black
 }
 
 function renderLedgerLines(state: State, note: SongNote): void {
@@ -373,4 +383,36 @@ function fadeColorToWhite(color: string, gradient: any) {
 
 function getNoteColor(coloredNotes: boolean, step: string): string {
   return coloredNotes ? coloredNotesMap[step] : colorMap.black
+}
+
+function getHandColorPrefix(
+  state: State,
+  note: SongNote,
+  tone: 'primary' | 'dim' | 'hover',
+): string | null {
+  const hand = state.hands?.[note.track]?.hand
+  if (hand !== 'left' && hand !== 'right') {
+    return null
+  }
+  const keyType = isBlack(getTransposedMidi(state, note)) ? 'black' : 'white'
+  const baseHex = HAND_COLORS[hand][keyType]
+  const hex =
+    tone === 'primary'
+      ? baseHex
+      : tone === 'hover'
+        ? pickHex(baseHex, '#ffffff', 0.6)
+        : pickHex(baseHex, '#000000', 0.7)
+  return hexToRgbString(hex)
+}
+
+function hexToRgbString(hex: string): string {
+  const normalized = hex.startsWith('#') ? hex.slice(1) : hex
+  if (normalized.length !== 6) {
+    return colorMap.black
+  }
+  const num = Number.parseInt(normalized, 16)
+  const r = (num >> 16) & 255
+  const g = (num >> 8) & 255
+  const b = num & 255
+  return `${r},${g},${b}`
 }

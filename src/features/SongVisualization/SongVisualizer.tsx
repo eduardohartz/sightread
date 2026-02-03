@@ -45,7 +45,7 @@ function CanvasRenderer({
 
   useEffect(() => {
     waitForImages().then(() => (isReady.current = true))
-  })
+  }, [])
 
   const canvasRect: DOMRect = useMemo(() => {
     return canvasRef.current?.getBoundingClientRect() ?? {}

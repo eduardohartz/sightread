@@ -148,6 +148,8 @@ export default function PlaySongPage() {
         : songConfig.right
           ? 'right'
           : 'none'
+  const handMode: 'left' | 'right' | 'both' =
+    hand === 'left' || hand === 'right' ? hand : 'both'
 
   // Hack for updating player when config changes.
   // Maybe move to the onChange? Or is this chill.
@@ -362,6 +364,16 @@ export default function PlaySongPage() {
     setSongConfig({ ...songConfig, waiting: !waiting })
   }
 
+  const handleHandModeChange = (mode: 'left' | 'right' | 'both') => {
+    if (mode === 'both') {
+      setSongConfig({ ...songConfig, left: true, right: true })
+    } else if (mode === 'left') {
+      setSongConfig({ ...songConfig, left: true, right: false })
+    } else {
+      setSongConfig({ ...songConfig, left: false, right: true })
+    }
+  }
+
   // Handle permission required for local files
   if (source === 'local' && requiresPermission) {
     return (
@@ -477,6 +489,8 @@ export default function PlaySongPage() {
               onToggleWaiting={handleWaitingToggle}
               isMetronomeOn={metronome.enabled}
               onToggleMetronome={handleMetronomeToggle}
+              handMode={handMode}
+              onHandChange={handleHandModeChange}
             />
           </div>
         )}
