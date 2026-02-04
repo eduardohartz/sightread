@@ -1,7 +1,9 @@
 import { changePassword, deleteAccount } from '@/features/api'
 import { useAuth } from '@/features/auth'
 import { useEventListener, useWhenClickedOutside } from '@/hooks'
-import { LogOut, Settings, Trash2, User } from 'lucide-react'
+import { validatePassword, PASSWORD_REQUIREMENTS } from '@/utils/password-validation'
+import clsx from 'clsx'
+import { Check, LogOut, Settings, Trash2, User, X } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { Modal } from '.'
 
@@ -127,13 +129,15 @@ function SettingsModal({ show, onClose, email, displayName }: SettingsModalProps
     setPasswordError('')
     setPasswordSuccess('')
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match')
+    // Validate password requirements
+    const validation = validatePassword(newPassword)
+    if (!validation.isValid) {
+      setPasswordError(validation.errors[0])
       return
     }
 
-    if (newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters')
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match')
       return
     }
 
@@ -242,7 +246,7 @@ function SettingsModal({ show, onClose, email, displayName }: SettingsModalProps
                 required
                 minLength={8}
               />
-              <p className="mt-1 text-gray-500 text-xs">Minimum 8 characters</p>
+              {newPassword.length > 0 && <PasswordRequirements password={newPassword} />}
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block font-medium text-gray-700 text-sm">
@@ -338,5 +342,31 @@ function SettingsModal({ show, onClose, email, displayName }: SettingsModalProps
         )}
       </div>
     </Modal>
+  )
+}
+
+function PasswordRequirements({ password }: { password: string }) {
+  const validation = validatePassword(password)
+
+  const requirements = [
+    { label: `At least ${PASSWORD_REQUIREMENTS.minLength} characters`, met: validation.checks.minLength },
+    { label: 'One uppercase letter', met: validation.checks.hasUppercase },
+    { label: 'One lowercase letter', met: validation.checks.hasLowercase },
+    { label: 'One number', met: validation.checks.hasNumber },
+    { label: 'One special character', met: validation.checks.hasSpecialChar },
+  ]
+
+  return (
+    <div className="space-y-1 mt-2">
+      {requirements.map((req, idx) => (
+        <div
+          key={idx}
+          className={clsx('flex items-center gap-1.5 text-xs', req.met ? 'text-green-600' : 'text-gray-500')}
+        >
+          {req.met ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+          {req.label}
+        </div>
+      ))}
+    </div>
   )
 }

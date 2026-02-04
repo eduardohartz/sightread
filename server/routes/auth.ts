@@ -9,7 +9,7 @@ import {
   setAuthCookie,
 } from '../lib/auth'
 import prisma from '../lib/prisma'
-import { loginSchema, registerSchema } from '../lib/validation'
+import { changePasswordSchema, loginSchema, registerSchema } from '../lib/validation'
 
 const router = Router()
 
@@ -186,17 +186,8 @@ router.put('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) 
  */
 router.put('/password', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { currentPassword, newPassword } = req.body
-
-    if (!currentPassword || !newPassword) {
-      res.status(400).json({ error: 'Current password and new password are required' })
-      return
-    }
-
-    if (newPassword.length < 8) {
-      res.status(400).json({ error: 'New password must be at least 8 characters' })
-      return
-    }
+    const data = changePasswordSchema.parse(req.body)
+    const { currentPassword, newPassword } = data
 
     // Get user with password
     const user = await prisma.user.findUnique({
@@ -224,6 +215,11 @@ router.put('/password', requireAuth, async (req: AuthenticatedRequest, res: Resp
 
     res.json({ message: 'Password updated successfully' })
   } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0]?.message || 'Invalid input'
+      res.status(400).json({ error: firstError })
+      return
+    }
     console.error('Password update error:', error)
     res.status(500).json({ error: 'Internal server error' })
   }

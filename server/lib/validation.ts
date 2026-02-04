@@ -1,15 +1,39 @@
 import { z } from 'zod'
 
+// Password validation criteria
+const PASSWORD_MIN_LENGTH = 8
+const SPECIAL_CHARS = '!@#$%^&*()_+-=[]{}|;:,.<>?'
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+const passwordSchema = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(
+    new RegExp(`[${escapeRegex(SPECIAL_CHARS)}]`),
+    `Password must contain at least one special character (${SPECIAL_CHARS})`,
+  )
+
 // User validation schemas
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: passwordSchema,
   displayName: z.string().min(1, 'Display name is required').max(100).optional(),
 })
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
+})
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: passwordSchema,
 })
 
 // Song validation schemas

@@ -1,7 +1,8 @@
 import { useAuth } from '@/features/auth'
 import { Loader } from '@/icons'
+import { validatePassword, PASSWORD_REQUIREMENTS } from '@/utils/password-validation'
 import clsx from 'clsx'
-import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react'
+import { Check, Eye, EyeOff, Lock, Mail, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
@@ -35,9 +36,18 @@ export default function AuthPage() {
     e.preventDefault()
     setError(null)
 
-    if (mode === 'register' && password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
+    if (mode === 'register') {
+      // Validate password requirements
+      const validation = validatePassword(password)
+      if (!validation.isValid) {
+        setError(validation.errors[0])
+        return
+      }
+
+      if (password !== confirmPassword) {
+        setError('Passwords do not match')
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -202,7 +212,7 @@ export default function AuthPage() {
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     minLength={8}
                     className="py-2.5 pr-10 pl-10 border border-gray-300 focus:border-violet-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/20 w-full text-sm transition"
-                    placeholder={mode === 'register' ? 'At least 8 characters' : '••••••••'}
+                    placeholder={mode === 'register' ? 'Create a strong password' : '••••••••'}
                   />
                   <button
                     type="button"
@@ -212,6 +222,10 @@ export default function AuthPage() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {/* Password requirements (Register only) */}
+                {mode === 'register' && password.length > 0 && (
+                  <PasswordRequirements password={password} />
+                )}
               </div>
 
               {/* Confirm Password (Register only) */}
@@ -298,5 +312,31 @@ export default function AuthPage() {
         </div>
       </div>
     </>
+  )
+}
+
+function PasswordRequirements({ password }: { password: string }) {
+  const validation = validatePassword(password)
+
+  const requirements = [
+    { label: `At least ${PASSWORD_REQUIREMENTS.minLength} characters`, met: validation.checks.minLength },
+    { label: 'One uppercase letter', met: validation.checks.hasUppercase },
+    { label: 'One lowercase letter', met: validation.checks.hasLowercase },
+    { label: 'One number', met: validation.checks.hasNumber },
+    { label: 'One special character', met: validation.checks.hasSpecialChar },
+  ]
+
+  return (
+    <div className="space-y-1 mt-2">
+      {requirements.map((req, idx) => (
+        <div
+          key={idx}
+          className={clsx('flex items-center gap-1.5 text-xs', req.met ? 'text-green-600' : 'text-gray-500')}
+        >
+          {req.met ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+          {req.label}
+        </div>
+      ))}
+    </div>
   )
 }
