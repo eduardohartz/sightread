@@ -108,7 +108,7 @@ export default function Phrases() {
       <title>Phrase Training</title>
       <MidiModal isOpen={isMidiModalOpen} onClose={() => setMidiModal(false)} />
       <div
-        className={clsx('flex h-screen flex-col outline-none', 'h-[100dvh]')}
+        className={clsx('flex h-screen flex-col outline-none', 'h-dvh')}
         autoFocus
         {...midiState.getListenerProps()}
       >
@@ -164,14 +164,14 @@ export default function Phrases() {
           </Select>
         </div>
         <Sizer height={24} />
-        <div className="flex h-[100px] w-full items-center justify-center gap-8">
+        <div className="flex h-25 w-full items-center justify-center gap-8">
           <ProgressDisplay />
           <StatDisplay label="Accuracy">{accuracy + '%'}</StatDisplay>
           <StatDisplay label="Score">{score}</StatDisplay>
           <StatDisplay label="Streak">{streak}</StatDisplay>
         </div>
         <Sizer height={32} />
-        <div className={'relative mx-auto h-[400px] w-[calc(100%-100px)] justify-center bg-white'}>
+        <div className={'relative mx-auto h-100 w-[calc(100%-100px)] justify-center bg-white'}>
           <SongVisualizer
             song={song}
             config={songConfig}
@@ -184,7 +184,7 @@ export default function Phrases() {
         <div className="flex basis-0 items-center justify-center gap-4 text-white">
           <PhrasesBtn
             onClick={handleReplay}
-            className="border-purple-primary text-purple-primary hover:bg-purple-light border bg-white"
+            className="hover:bg-purple-light border-purple-primary text-purple-primary border bg-white"
           >
             Replay
           </PhrasesBtn>
@@ -208,15 +208,15 @@ function ProgressDisplay() {
     progressRef.current.style.width = `${progress}%`
   })
   return (
-    <div className="flex min-w-[150px] flex-col gap-2">
+    <div className="flex min-w-37.5 flex-col gap-2">
       <span className="w-full text-xl font-semibold text-black">Progress</span>
-      <div className="relative h-[40px] w-full">
-        <div className="absolute bottom-0 h-[34px] w-full rounded-r-3xl bg-gray-300" />
+      <div className="relative h-10 w-full">
+        <div className="absolute bottom-0 h-8.5 w-full rounded-r-3xl bg-gray-300" />
         <div
           style={{
             boxShadow: `inset 0px 2px 3px rgba(255, 255, 255, 0.4), inset 0px 7px 11px rgba(255, 255, 255, 0.25)`,
           }}
-          className="from-purple-darkest to-purple-primary absolute bottom-0 h-[34px] rounded-r-3xl bg-linear-to-r"
+          className="from-purple-darkest to-purple-primary absolute bottom-0 h-8.5 rounded-r-3xl bg-linear-to-r"
           ref={progressRef}
         />
       </div>
@@ -226,7 +226,7 @@ function ProgressDisplay() {
 
 function StatDisplay(props: PropsWithChildren<{ label: string }>) {
   return (
-    <div className="flex min-w-[150px] flex-col gap-2">
+    <div className="flex min-w-37.5 flex-col gap-2">
       <span className="text-xl font-semibold text-black">{props.label}</span>
       <span className="text-purple-primary text-4xl font-semibold">{props.children}</span>
     </div>
@@ -238,7 +238,7 @@ function PhrasesBtn({ children, ...rest }: PropsWithChildren<ButtonProps>) {
   return (
     <button
       {...(rest as any)}
-      className={clsx(rest.className, 'w-[100px] rounded-md px-2 py-2 text-xl transition')}
+      className={clsx(rest.className, 'w-25 rounded-md px-2 py-2 text-xl transition')}
     >
       {children}
     </button>

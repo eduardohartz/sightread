@@ -21,3 +21,10 @@ tsconfig.tsbuildinfo
 
 # vercel cli files
 .vercel
+
+# Uploads directory (user uploaded songs)
+/uploads
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal

@@ -1,4 +1,5 @@
 import { Modal } from '@/components'
+import { uploadSong } from '@/features/api'
 import { renderMidiToMp3 } from '@/features/audio/render-midi'
 import { SongScrubBar, useSongScrubTimes } from '@/features/controls'
 import { usePlayer } from '@/features/player'
@@ -10,7 +11,7 @@ import { Download, Loader, Share } from '@/icons'
 import { SongSource } from '@/types'
 import { base64ToBytes, formatInstrumentName } from '@/utils'
 import { useAtomValue } from 'jotai'
-import { Pause, Play } from 'lucide-react'
+import { Music, Pause, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from 'react-aria-components'
 
@@ -53,6 +54,10 @@ export default function SongPreviewModal({
   const [isMp3Rendering, setIsMp3Rendering] = useState(false)
   const [isSoundfontLoading, setIsSoundfontLoading] = useState(false)
   const [isSoundfontReady, setIsSoundfontReady] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [showSongNameInput, setShowSongNameInput] = useState(false)
+  const [songName, setSongName] = useState('')
   const noteCount = song?.notes.length
   const previewInstrument = player.synths?.[0]?.getInstrument?.()
   const instrumentLabel = previewInstrument ? formatInstrumentName(previewInstrument) : '--'
@@ -62,6 +67,9 @@ export default function SongPreviewModal({
     if (!show || !instrument) {
       setIsSoundfontReady(false)
       setIsSoundfontLoading(false)
+      setUploadSuccess(false)
+      setShowSongNameInput(false)
+      setSongName('')
       return
     }
 
@@ -122,7 +130,7 @@ export default function SongPreviewModal({
           )}
           {id && source && <SongPreview songId={id} source={source} />}
         </div>
-        <div className="flex w-[420px] flex-col border-l border-gray-200 bg-white">
+        <div className="flex w-105 flex-col border-l border-gray-200 bg-white">
           <div className="px-6 pt-6 pb-3">
             <span className="text-xl font-semibold text-gray-900">Preview your recording</span>
           </div>
@@ -219,6 +227,82 @@ export default function SongPreviewModal({
                     ? 'Rendering MP3'
                     : 'Download MP3'}
               </Button>
+            </div>
+            <div className="mt-3 flex w-full">
+              {!showSongNameInput ? (
+                <Button
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 active:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  isDisabled={uploadSuccess}
+                  onPress={() => setShowSongNameInput(true)}
+                >
+                  <Music className="h-4 w-4" />
+                  {uploadSuccess ? 'Added to My Songs!' : 'Add to My Songs'}
+                </Button>
+              ) : (
+                <div className="flex w-full flex-col gap-2">
+                  <input
+                    type="text"
+                    value={songName}
+                    onChange={(e) => setSongName(e.target.value)}
+                    placeholder="Enter song name..."
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      // Stop propagation to prevent keyboard-as-piano from triggering
+                      e.stopPropagation()
+                      if (e.key === 'Escape') {
+                        setShowSongNameInput(false)
+                        setSongName('')
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-gray-100 text-sm font-semibold text-gray-700 transition hover:bg-gray-200 active:bg-gray-300"
+                      onPress={() => {
+                        setShowSongNameInput(false)
+                        setSongName('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 active:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      isDisabled={isUploading || !songName.trim()}
+                      onPress={async () => {
+                        if (!id || !songName.trim()) return
+                        setIsUploading(true)
+                        try {
+                          const midiBytes = base64ToBytes(id)
+                          const midiBlob = new Blob([midiBytes as BlobPart], { type: 'audio/midi' })
+                          const file = new File([midiBlob], `${songName.trim()}.mid`, {
+                            type: 'audio/midi',
+                          })
+                          const { error } = await uploadSong(file, songName.trim())
+                          if (error) {
+                            console.error('Failed to upload recording:', error)
+                          } else {
+                            setUploadSuccess(true)
+                            setShowSongNameInput(false)
+                            setSongName('')
+                          }
+                        } catch (error) {
+                          console.error('Failed to upload recording:', error)
+                        } finally {
+                          setIsUploading(false)
+                        }
+                      }}
+                    >
+                      {isUploading ? (
+                        <Loader width={16} height={16} className="animate-spin" />
+                      ) : (
+                        <Music className="h-4 w-4" />
+                      )}
+                      {isUploading ? 'Uploading...' : 'Save'}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import Toast from '@/components/Toast'
+import { AuthRequired } from '@/features/auth'
 import { useSong } from '@/features/data'
 import { useSongMetadata } from '@/features/data/library'
-import midiState from '@/features/midi'
+import midiState, { useRecordMidi } from '@/features/midi'
 import { requiresPermissionAtom, scanFolders } from '@/features/persist/persistence'
 import { usePlayer } from '@/features/player'
 import {
@@ -16,20 +17,22 @@ import {
   useLazyStableRef,
   useOnUnmount,
   usePlayerState,
+  useScoreSubmission,
   useSongSettings,
   useWakeLock,
 } from '@/hooks'
 import { MidiStateEvent, SongSource } from '@/types'
-import { round } from '@/utils'
+import { bytesToBase64, round } from '@/utils'
 import * as RadixToast from '@radix-ui/react-toast'
 import clsx from 'clsx'
 import { useAtomValue } from 'jotai'
 import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { SettingsPanel, TopBar } from './components'
 import CountdownOverlay from './components/CountdownOverlay'
 import { MidiModal } from './components/MidiModal'
+import { ScoreResultModal } from './components/ScoreResultModal'
 import { StatsPopup } from './components/StatsPopup'
 import TimelineStrip from './components/TimelineStrip'
 import TransportBar from './components/TransportBar'
@@ -103,7 +106,7 @@ function SongNotFound({ songTitle, onGoBack }: { songTitle?: string; onGoBack: (
   )
 }
 
-export default function PlaySongPage() {
+function PlaySongPage() {
   const [searchParams, _setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   let { source, id, recording }: { source: SongSource; id: string; recording?: string } =
@@ -136,10 +139,55 @@ export default function PlaySongPage() {
   const [toastKey, setToastKey] = useState<string>('')
   const toastKeyRef = useRef(toastKey)
 
+  // Score submission state
+  const {
+    submit: submitScore,
+    isSubmitting: isScoreSubmitting,
+    sessionId,
+    resetSession,
+    lastSubmission,
+  } = useScoreSubmission()
+  const [showScoreModal, setShowScoreModal] = useState(false)
+  const [sessionStats, setSessionStats] = useState<{
+    perfect: number
+    good: number
+    missed: number
+    errors: number
+    accuracy: number
+    combined: number
+    maxStreak: number
+  } | null>(null)
+  const [bestStats, setBestStats] = useState<{
+    accuracy: number
+    combined: number
+    maxStreak: number
+  } | null>(null)
+  const [isNewBest, setIsNewBest] = useState(false)
+  const maxStreakRef = useRef(0)
+  const hasSubmittedOnceRef = useRef(false) // Track if we've submitted in this session
+
+  // Track max streak during play
+  const currentStreak = useAtomValue(player.score.streak)
+  useEffect(() => {
+    if (currentStreak > maxStreakRef.current) {
+      maxStreakRef.current = currentStreak
+    }
+  }, [currentStreak])
+
   const [songConfig, setSongConfig] = useSongSettings(id)
   const isRecording = !!recording
   const isLooping = songConfig.loop?.enabled ?? false
   useWakeLock()
+
+  // Recording functionality - to capture user's performance
+  const {
+    isRecording: isPerformanceRecording,
+    startRecording: startPerformanceRecording,
+    stopRecording: stopPerformanceRecording,
+  } = useRecordMidi(midiState)
+  const performanceRecordingRef = useRef<string | null>(null)
+  const isRecordingActiveRef = useRef(false) // Sync ref to avoid race conditions
+
   const hand =
     songConfig.left && songConfig.right
       ? 'both'
@@ -148,8 +196,7 @@ export default function PlaySongPage() {
         : songConfig.right
           ? 'right'
           : 'none'
-  const handMode: 'left' | 'right' | 'both' =
-    hand === 'left' || hand === 'right' ? hand : 'both'
+  const handMode: 'left' | 'right' | 'both' = hand === 'left' || hand === 'right' ? hand : 'both'
 
   // Hack for updating player when config changes.
   // Maybe move to the onChange? Or is this chill.
@@ -236,6 +283,136 @@ export default function PlaySongPage() {
       }
       return msg
     })
+  }
+
+  // Submit score (can be called on pause or song end)
+  const submitCurrentScore = useCallback(
+    async (showModal: boolean = false) => {
+      if (isRecording || !song) return
+
+      const perfect = player.store.get(player.score.perfect)
+      const good = player.store.get(player.score.good)
+      const missed = player.store.get(player.score.missed)
+      const errors = player.store.get(player.score.error)
+      const accuracy = player.store.get(player.score.accuracy)
+      const combined = player.store.get(player.score.combined)
+      const maxStreak = maxStreakRef.current
+
+      // Don't submit if nothing was played
+      if (perfect + good === 0) return
+
+      const stats = { perfect, good, missed, errors, accuracy, combined, maxStreak }
+      setSessionStats(stats)
+
+      // Stop recording and get the recording data
+      let base64Recording: string | undefined
+      if (isRecordingActiveRef.current) {
+        const recordingBytes = stopPerformanceRecording()
+        isRecordingActiveRef.current = false // Update ref synchronously
+        if (recordingBytes && recordingBytes.length > 0) {
+          base64Recording = bytesToBase64(recordingBytes)
+          performanceRecordingRef.current = base64Recording
+        }
+      }
+
+      // Build the score submission
+      const scoreInput: Parameters<typeof submitScore>[0] = {
+        perfect,
+        good,
+        missed,
+        errors,
+        accuracy,
+        combined,
+        maxStreak,
+        playedDuration: Math.round(player.currentSongTime),
+        totalDuration: Math.round(song.duration),
+        bpmModifier: player.store.get(player.bpmModifier),
+        hand: handMode,
+        base64Recording,
+      }
+
+      // Set songId or builtinSongId based on source
+      if (source === 'uploaded') {
+        scoreInput.songId = id
+      } else if (source === 'builtin') {
+        scoreInput.builtinSongId = id
+      } else {
+        // For base64 or other sources, use builtinSongId
+        scoreInput.builtinSongId = id
+      }
+
+      const result = await submitScore(scoreInput)
+      if (result.success) {
+        hasSubmittedOnceRef.current = true
+        setIsNewBest(result.isNewBest)
+        if (showModal) {
+          setShowScoreModal(true)
+        } else {
+          // Show a quick toast instead
+          showToast(result.isNewBest ? '🎉 New best score!' : 'Score saved')
+        }
+      }
+    },
+    [song, player, isRecording, source, id, handMode, submitScore, stopPerformanceRecording],
+  )
+
+  // Handle end of song - submit score and show modal, then reset for new session
+  const handleSongEnd = useCallback(async () => {
+    await submitCurrentScore(true)
+    // Reset session so playing again creates a new entry
+    resetSession()
+    maxStreakRef.current = 0
+    hasSubmittedOnceRef.current = false
+    performanceRecordingRef.current = null
+  }, [submitCurrentScore, resetSession])
+
+  // Handle pause - submit score silently
+  const handlePause = useCallback(async () => {
+    // Only submit if we've played for at least 5 seconds
+    if (player.currentSongTime > 5) {
+      await submitCurrentScore(false)
+    }
+  }, [submitCurrentScore, player])
+
+  // Subscribe to player state changes to detect pause, play, and song end
+  useEffect(() => {
+    const unsubscribe = player.store.sub(player.state, () => {
+      const state = player.store.get(player.state)
+      if (state === 'Playing' && !isRecording && !isRecordingActiveRef.current) {
+        // Start recording when playing begins (or resumes after pause)
+        startPerformanceRecording()
+        isRecordingActiveRef.current = true
+      } else if (state === 'Paused' && !isRecording) {
+        // Check if song ended naturally (reached the end)
+        const isAtEnd = song && player.currentSongTime >= song.duration - 0.5
+        if (isAtEnd && player.currentSongTime > 10) {
+          // Song finished - show score modal
+          handleSongEnd()
+        } else {
+          // User paused manually - save silently
+          handlePause()
+        }
+      }
+    })
+    return unsubscribe
+  }, [player, isRecording, handlePause, handleSongEnd, startPerformanceRecording, song])
+
+  const handlePlayAgain = () => {
+    setShowScoreModal(false)
+    setSessionStats(null)
+    setIsNewBest(false)
+    setBestStats(null)
+    maxStreakRef.current = 0
+    hasSubmittedOnceRef.current = false
+    performanceRecordingRef.current = null
+    isRecordingActiveRef.current = false
+    resetSession() // Reset the session for a new play
+    player.restart()
+  }
+
+  const handleCloseScoreModal = () => {
+    setShowScoreModal(false)
+    navigate('/songs')
   }
 
   const handleMetronomeToggle = () => {
@@ -416,7 +593,7 @@ export default function PlaySongPage() {
             title={songMeta?.title}
             onClickBack={() => {
               player.stop()
-              navigate('/')
+              navigate('/songs')
             }}
             onClickMidi={(e) => {
               e.stopPropagation()
@@ -449,7 +626,7 @@ export default function PlaySongPage() {
             </div>
           )}
           {!isRecording && isSettingsOpen ? (
-            <div className="absolute top-0 right-0 h-full w-[360px] border-l border-[#2b2a33] bg-[#121016] shadow-2xl">
+            <div className="absolute top-0 right-0 h-full w-90 border-l border-[#2b2a33] bg-[#121016] shadow-2xl">
               <SettingsPanel
                 onChange={setSongConfig}
                 config={songConfig}
@@ -506,8 +683,29 @@ export default function PlaySongPage() {
             toastKey={toastKey}
           />
           <RadixToast.Viewport className="fixed right-4 bottom-4 z-50 flex w-80 max-w-[100vw] flex-col-reverse gap-3 p-4" />
+          {sessionStats && (
+            <ScoreResultModal
+              show={showScoreModal}
+              onClose={handleCloseScoreModal}
+              onPlayAgain={handlePlayAgain}
+              isSubmitting={isScoreSubmitting}
+              isNewBest={isNewBest}
+              stats={sessionStats}
+              bestStats={bestStats}
+            />
+          )}
         </>
       )}
     </>
   )
 }
+
+function PlaySongPageWithAuth() {
+  return (
+    <AuthRequired>
+      <PlaySongPage />
+    </AuthRequired>
+  )
+}
+
+export default PlaySongPageWithAuth

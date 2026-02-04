@@ -145,7 +145,7 @@ export default function ManageFoldersForm({ onClose }: { onClose: () => void }) 
                   className="group flex items-center justify-between rounded-md border border-gray-200 p-3 transition-colors hover:border-gray-300 hover:bg-gray-50"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <Folder className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                    <Folder className="h-4 w-4 shrink-0 text-gray-400" />
                     <div className="min-w-0 flex-1">
                       <p className={'truncate text-sm font-medium text-gray-900'}>
                         {folder.handle.name}

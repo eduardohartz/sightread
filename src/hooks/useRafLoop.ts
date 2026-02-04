@@ -9,17 +9,14 @@ export default function useRAFLoop(fn: Function) {
     fnRef.current = fn
   }, [fn])
 
-  const animate = useCallback(
-    (time: number) => {
-      if (previousTimeRef.current !== null) {
-        const deltaTime = time - previousTimeRef.current
-        fnRef.current?.(deltaTime)
-      }
-      previousTimeRef.current = time
-      requestRef.current = requestAnimationFrame(animate)
-    },
-    [],
-  )
+  const animate = useCallback((time: number) => {
+    if (previousTimeRef.current !== null) {
+      const deltaTime = time - previousTimeRef.current
+      fnRef.current?.(deltaTime)
+    }
+    previousTimeRef.current = time
+    requestRef.current = requestAnimationFrame(animate)
+  }, [])
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(animate)

@@ -8,17 +8,21 @@ import { Popover } from './Popover'
 
 type NavItem = { route: string; label: string }
 const navItems: NavItem[] = [
-  { route: '/songs', label: 'Learn a song' },
+  { route: '/songs', label: 'Songs' },
   { route: '/freeplay', label: 'Free play' },
   // TODO: launch phrases.
   // { route: '/training/phrases', label: 'Training' },
   { route: '/about', label: 'About' },
 ]
 
-export default function AppBar() {
+interface AppBarProps {
+  children?: React.ReactNode
+}
+
+export default function AppBar({ children }: AppBarProps) {
   return (
     <div
-      className="relative flex h-[50px] min-h-[50px] flex-col justify-center bg-violet-600 shadow-sm"
+      className="relative flex h-12.5 min-h-12.5 flex-col justify-center bg-violet-600 shadow-sm"
       style={{
         // This is a hack that accounts for the sometimes present scrollbar.
         // The 100vw includes scrollbar and the 100% does not, so we padLeft the difference.
@@ -31,7 +35,7 @@ export default function AppBar() {
           <SmallWindowNav />
         </div>
         <Link to={'/'} className="hover:text-purple-hover flex items-baseline text-white">
-          <Logo height={24} width={24} className="relative top-[3px]" />
+          <Logo height={24} width={24} className="relative top-0.75" />
           <Sizer width={8} />
           <span className="text-2xl font-extralight"> SIGHTREAD</span>
         </Link>
@@ -47,15 +51,9 @@ export default function AppBar() {
             )
           })}
           <div className="ml-auto flex items-center gap-3 pr-8 lg:pr-0">
+            {children}
             <NavIconButton
-              to={'https://www.youtube.com/channel/UCGf2AlCRD3ZCc8ahkqBMtqA'}
-              label="YouTube"
-              title="YouTube"
-            >
-              <Youtube size={20} />
-            </NavIconButton>
-            <NavIconButton
-              to={'https://github.com/sightread/sightread'}
+              to={'https://github.com/eduardohartz/sightread'}
               label="GitHub"
               title="GitHub"
             >
@@ -85,7 +83,7 @@ function SmallWindowNav() {
                 onAction={() => navigate(nav.route)}
                 className={clsx(
                   'flex w-full items-center rounded-xl px-3 py-2 text-base font-medium text-white/90 transition outline-none',
-                  'data-[focused]:bg-white/15 data-[pressed]:bg-white/10',
+                  'pressed:bg-white/10 data-focused:bg-white/15',
                 )}
               >
                 {nav.label}
@@ -94,9 +92,9 @@ function SmallWindowNav() {
           })}
           <Separator className="mx-2 my-1 border-t border-white/10" />
           <MenuItem
-            href="https://github.com/sightread/sightread"
+            href="https://github.com/eduardohartz/sightread"
             target="_blank"
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/80 transition outline-none data-[focused]:bg-white/15 data-[pressed]:bg-white/10"
+            className="pressed:bg-white/10 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/80 transition outline-none data-focused:bg-white/15"
             aria-label="GitHub"
           >
             <GitHub size={18} className="t-[2px] relative" />
@@ -105,7 +103,7 @@ function SmallWindowNav() {
           <MenuItem
             href="https://www.youtube.com/channel/UCGf2AlCRD3ZCc8ahkqBMtqA"
             target="_blank"
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/80 transition outline-none data-[focused]:bg-white/15 data-[pressed]:bg-white/10"
+            className="pressed:bg-white/10 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/80 transition outline-none data-focused:bg-white/15"
             aria-label="YouTube"
           >
             <Youtube size={18} />

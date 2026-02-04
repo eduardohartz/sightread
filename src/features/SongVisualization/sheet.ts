@@ -187,9 +187,9 @@ function getGameColorPrefix(
   const handPrimary = getHandColorPrefix(state, note, 'primary')
   const handDim = getHandColorPrefix(state, note, 'dim')
   const handHover = getHandColorPrefix(state, note, 'hover')
-  const baseColor = coloredNotes ? getNoteColor(true, step) : handPrimary ?? colorMap.primary
-  const dimColor = coloredNotes ? getNoteColor(true, step) : handDim ?? colorMap.black
-  const hoverColor = coloredNotes ? getNoteColor(true, step) : handHover ?? colorMap.hover
+  const baseColor = coloredNotes ? getNoteColor(true, step) : (handPrimary ?? colorMap.primary)
+  const dimColor = coloredNotes ? getNoteColor(true, step) : (handDim ?? colorMap.black)
+  const hoverColor = coloredNotes ? getNoteColor(true, step) : (handHover ?? colorMap.hover)
 
   if (
     isHitNote(state.player, note) &&
@@ -217,10 +217,10 @@ function getLearnSongColorPrefix(
   const handDim = getHandColorPrefix(state, note, 'dim')
 
   if (isPlayingNote) {
-    return coloredNotes ? getNoteColor(true, step) : handPrimary ?? colorMap.primary
+    return coloredNotes ? getNoteColor(true, step) : (handPrimary ?? colorMap.primary)
   }
 
-  return coloredNotes ? getNoteColor(coloredNotes, step) : handDim ?? colorMap.black
+  return coloredNotes ? getNoteColor(coloredNotes, step) : (handDim ?? colorMap.black)
 }
 
 function renderLedgerLines(state: State, note: SongNote): void {

@@ -1,3 +1,4 @@
+import { getSongFileUrl } from '@/features/api'
 import { parseMidi } from '@/features/parsers'
 import { Song, SongSource } from '@/types'
 import { base64ToBytes, peek } from '@/utils'
@@ -24,6 +25,10 @@ async function fetchSong(id: string, source: SongSource): Promise<Song> {
     return fetch(url).then(handleSong)
   } else if (source === 'base64') {
     return getBase64Song(id)
+  } else if (source === 'uploaded') {
+    // Fetch from the API server with credentials
+    const url = getSongFileUrl(id)
+    return fetch(url, { credentials: 'include' }).then(handleSong)
   } else if (source === 'local') {
     await persistence.initialize()
 

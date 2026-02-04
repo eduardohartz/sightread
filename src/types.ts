@@ -11,7 +11,7 @@ export type DifficultyLabel =
   // "-" stands for Unknown
   | '-'
 
-export type SongSource = 'local' | 'builtin' | 'generated' | 'base64'
+export type SongSource = 'local' | 'builtin' | 'generated' | 'base64' | 'uploaded'
 export type SongMetadata = {
   id: string
   file: string

@@ -1,4 +1,6 @@
 import { AppBar, MarketingFooter, Sizer } from '@/components'
+import { useAuth } from '@/features/auth'
+import { LogOut, User } from 'lucide-react'
 import React, { PropsWithChildren } from 'react'
 import { Link, LinkProps } from 'react-router'
 import manifest from './../../manifest.json'
@@ -15,10 +17,31 @@ function SidebarLink({ children }: PropsWithChildren<{ children: string }>) {
 }
 
 export default function AboutPage() {
+  const { user, logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+  }
   return (
     <div className="relative">
       <title>About</title>
-      <AppBar />
+      <AppBar>
+        <div className="mr-2 flex items-center rounded-md bg-violet-500/50 px-3 py-1">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-100">
+              <User className="h-4 w-4" />
+              <span>{user?.displayName || user?.email}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-gray-100 transition hover:bg-gray-100 hover:text-gray-900"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      </AppBar>
       <div className="md:bg-purple-lightest">
         <div className="mx-auto flex max-w-(--breakpoint-lg)">
           <div className="sticky top-0 hidden max-h-screen p-8 md:block">
@@ -36,13 +59,16 @@ export default function AboutPage() {
                   <SidebarLink>Music selection</SidebarLink>
                 </li>
                 <li>
+                  <SidebarLink>Online features</SidebarLink>
+                </li>
+                <li>
                   <SidebarLink>Browser compatibility</SidebarLink>
                 </li>
                 <li>
                   <SidebarLink>Roadmap</SidebarLink>
                 </li>
                 <li>
-                  <SidebarLink>Feedback</SidebarLink>
+                  <SidebarLink>Credits</SidebarLink>
                 </li>
                 <li>
                   <SidebarLink>Product recommendations</SidebarLink>
@@ -58,9 +84,10 @@ export default function AboutPage() {
               <WhatSection />
               <GettingStarted />
               <MusicSelectionSection />
+              <OnlineFeaturesSection />
               <BrowserCompatibilitySection />
-              <RoadmapSection />
               <FeedbackSection />
+              <CreditsSection />
               <ProductRecommendations />
               <AttributionsSection />
             </div>
@@ -76,7 +103,7 @@ function WhatSection() {
   return (
     <Article
       header="What"
-      first="Sightread is a free and open-source webapp for learning to play Piano."
+      first="Sightread is a free and open-source webapp for learning to play Piano, now with online accounts for syncing your library and progress."
     >
       <p>
         Sightread is great for beginners – you can play songs without needing to learn sheet music.
@@ -140,10 +167,41 @@ function MusicSelectionSection() {
   return (
     <Article
       header="Music selection"
-      first="The Sightread catalog has two components: builtin and local file uploads."
+      first="The Sightread catalog has two components: a built-in library and your personal uploads."
     >
       <p>Sightread includes music from the public domain.</p>
-      <p>You can upload MIDI files directly to Sightread which saves them in browser storage.</p>
+      <p>
+        You can upload MIDI files to your library ("My Songs") so you can practice them again later,
+        on any other device.
+      </p>
+    </Article>
+  )
+}
+
+function OnlineFeaturesSection() {
+  return (
+    <Article
+      header="Online features"
+      first="Create an account to sync songs, scores, and recordings across devices."
+    >
+      <p>
+        This version of Sightread includes optional online functionality. When signed in, your
+        uploaded songs, score history, and practice recordings are stored online. Other features:
+      </p>
+      <ul className="list-disc px-12">
+        <li>
+          <b>My Songs:</b> upload MIDI files to your account.
+        </li>
+        <li>
+          <b>Scores:</b> your recent attempts and best attempt are saved per song.
+        </li>
+        <li>
+          <b>Recordings:</b> practice sessions are saved and can replayed.
+        </li>
+        <li>
+          <b>Free play:</b> record an idea and add it to your song library.
+        </li>
+      </ul>
     </Article>
   )
 }
@@ -164,34 +222,34 @@ function BrowserCompatibilitySection() {
   )
 }
 
-function RoadmapSection() {
-  return (
-    <Article header="Roadmap">
-      <p>
-        We have so many exciting ideas, but we have full time jobs so progress is slow. Things we
-        plan to implement in future releases:
-      </p>
-      <ul className="list-disc px-12">
-        <li>iOS App</li>
-        <li>MusicXML file upload and full Sheet Music display.</li>
-        <li>Progress tracking and song scoring to see improvement over time.</li>
-        <li>
-          Difficulty scaling for algorithmically scaling the difficulty of a song up and down.
-        </li>
-        <li>Record a performance in free play and share it with a link.</li>
-        <li>Small training tools and games.</li>
-      </ul>
-    </Article>
-  )
-}
-
 function FeedbackSection() {
   return (
     <Article header="Feedback">
       <p>
         Found a bug or have a feature request? Please file an issue on{' '}
-        <AboutLink to="https://github.com/sightread/sightread/issues">GitHub</AboutLink> or send an{' '}
-        <AboutLink to="mailto:sightreadllc@gmail.com">email</AboutLink>.
+        <AboutLink to="https://github.com/eduardohartz/sightread/issues">GitHub</AboutLink> or send
+        an <AboutLink to="mailto:me@eduardohartz.dev">email</AboutLink>.
+      </p>
+    </Article>
+  )
+}
+
+function CreditsSection() {
+  return (
+    <Article
+      header="Credits"
+      first="Original open-source project by Jake Fried; independently operated online version by Eduardo Hartz."
+    >
+      <p>
+        Sightread was originally created by Jake Fried. This version has been modified by{' '}
+        <AboutLink to="https://eduardohartz.dev">Eduardo Hartz</AboutLink> to add online
+        functionality (accounts, cloud song uploads, score history, and attempt recordings).
+      </p>
+      <p>
+        This deployment is independently operated and stores user data on Eduardo's servers to
+        provide syncing. There is no affiliation with Jake Fried beyond the original open-source
+        project. The below affiliate links have not been modified and continue to support the
+        original creator.
       </p>
     </Article>
   )

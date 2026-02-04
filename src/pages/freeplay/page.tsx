@@ -1,3 +1,4 @@
+import { AuthRequired } from '@/features/auth'
 import midiState, { useRecordMidi } from '@/features/midi'
 import { SongVisualizer } from '@/features/SongVisualization'
 import { InstrumentName, useSynth } from '@/features/synth'
@@ -10,7 +11,7 @@ import RecordingModal from './components/RecordingModal'
 import TopBar from './components/TopBar'
 import FreePlayer from './utils/free-player'
 
-export default function FreePlay() {
+function FreePlayContent() {
   const [instrumentName, setInstrumentName] = useState<InstrumentName>('acoustic_grand_piano')
   const synthState = useSynth(instrumentName)
   const freePlayer = useLazyStableRef(() => new FreePlayer())
@@ -115,5 +116,13 @@ export default function FreePlay() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function FreePlay() {
+  return (
+    <AuthRequired>
+      <FreePlayContent />
+    </AuthRequired>
   )
 }

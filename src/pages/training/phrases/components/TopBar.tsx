@@ -11,7 +11,7 @@ type TopBarProps = {
 
 export default function TopBar({ onClickMidi }: TopBarProps) {
   return (
-    <div className="flex h-[50px] min-h-[50px] w-full items-center gap-4 bg-[#292929] px-8 text-2xl text-white transition">
+    <div className="flex h-12.5 min-h-12.5 w-full items-center gap-4 bg-[#292929] px-8 text-2xl text-white transition">
       <ButtonWithTooltip tooltip="Back">
         <Link to="/">
           <ArrowLeft size={24} />

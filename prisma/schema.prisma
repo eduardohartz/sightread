@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+}
+
+model User {
+    id           String   @id @default(uuid())
+    email        String   @unique
+    passwordHash String
+    displayName  String?
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    // Relations
+    songs      Song[]
+    songScores SongScore[]
+
+    @@index([email])
+}
+
+model Song {
+    id         String   @id @default(uuid())
+    title      String
+    fileName   String // Original filename
+    filePath   String // Server storage path: /songs/{userId}/{uuid}.mid
+    fileSize   Int
+    duration   Int // Duration in seconds
+    noteCount  Int?
+    uploadedAt DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    // Relations
+    userId String
+    user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    scores SongScore[]
+
+    @@index([userId])
+    @@index([title])
+}
+
+model SongScore {
+    id        String @id @default(uuid())
+    sessionId String @default(uuid()) // Unique per play session
+
+    // Score metrics (matches the player.ts Score interface)
+    perfect   Int @default(0)
+    good      Int @default(0)
+    missed    Int @default(0)
+    errors    Int @default(0)
+    accuracy  Int @default(0) // Percentage 0-100
+    combined  Int @default(0) // Combined score
+    maxStreak Int @default(0)
+
+    // Song metadata at time of play
+    playedDuration Int @default(0) // How much of the song was played (seconds)
+    totalDuration  Int @default(0) // Total song duration (seconds)
+
+    // Settings used during play
+    bpmModifier Float  @default(1.0)
+    hand        String @default("both") // "left", "right", "both"
+
+    // Optional recording of the play session
+    base64Recording String? @db.LongText
+
+    playedAt  DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Optional relation to user-uploaded song (null for builtin songs)
+    songId String?
+    song   Song?   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+    // For builtin songs, store the song identifier
+    builtinSongId String? @db.LongText
+
+    @@index([userId])
+    @@index([songId])
+    @@index([builtinSongId(length: 255)])
+    @@index([userId, songId])
+    @@index([userId, builtinSongId(length: 255)])
+    @@index([sessionId])
+}

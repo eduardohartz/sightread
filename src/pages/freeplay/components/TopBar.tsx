@@ -33,7 +33,7 @@ export default function TopBar({
     <div className="relative z-10 h-14 w-screen border-b border-[#20222a] bg-[#15161b] px-4">
       <div className="flex h-full items-center gap-4 text-white">
         <ButtonWithTooltip tooltip="Back">
-          <Link to="/">
+          <Link to="/songs">
             <ArrowLeft size={24} />
           </Link>
         </ButtonWithTooltip>
@@ -51,7 +51,7 @@ export default function TopBar({
           MIDI
         </PillActionButton>
         <PickInstrument
-          className="w-auto min-w-[160px]"
+          className="w-auto min-w-40"
           isLoading={isLoading}
           errorMessage={isError ? 'Error loading instruments' : undefined}
           value={value}

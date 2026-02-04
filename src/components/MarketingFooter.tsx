@@ -1,5 +1,6 @@
 import { cn } from '@/utils'
 import React, { PropsWithChildren } from 'react'
+import { Link } from 'react-router'
 import Sizer from './Sizer'
 
 function MaxWidthWrapper(props: PropsWithChildren<{ as?: any; className?: string }>) {
@@ -11,7 +12,7 @@ function MaxWidthWrapper(props: PropsWithChildren<{ as?: any; className?: string
 export function MarketingFooter() {
   return (
     <footer
-      className="bg-foreground/[0.02] dark:bg-foreground/[0.01] w-full border-t border-gray-200 dark:border-gray-800"
+      className="bg-foreground/2 dark:bg-foreground/1 w-full border-t border-gray-200 dark:border-gray-800"
       aria-labelledby="footer-heading"
     >
       <h2 id="footer-heading" className="sr-only">
@@ -19,7 +20,10 @@ export function MarketingFooter() {
       </h2>
       <MaxWidthWrapper className="mx-auto w-full py-4">
         <div className="text-muted-foreground text-center text-xs sm:text-left">
-          © 2025 Sightread Studio, LLC. All rights reserved.
+          © 2025 Eduardo Hartz.{' '}
+          <a href="https://eduardohartz.dev" target="_blank" className="text-violet-600">
+            See what else I made!
+          </a>
         </div>
       </MaxWidthWrapper>
     </footer>
