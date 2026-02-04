@@ -1,4 +1,4 @@
-import { AppBar, MarketingFooter, Modal, Sizer } from '@/components'
+import { AppBar, MarketingFooter, Modal, Sizer, UserMenu } from '@/components'
 import { BestScoreInfo, getBestScores, getUserSongs, UserSong } from '@/features/api'
 import { AuthRequired, useAuth } from '@/features/auth'
 import { SongPreviewModal } from '@/features/SongPreview'
@@ -7,7 +7,7 @@ import { Loader } from '@/icons'
 import builtinSongManifest from '@/manifest.json'
 import { SongMetadata, SongSource } from '@/types'
 import clsx from 'clsx'
-import { LogOut, Music, Plus, Upload, User } from 'lucide-react'
+import { Music, Plus, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Table } from './components'
 import { SearchBox } from './components/Table/SearchBox'
@@ -39,7 +39,7 @@ function userSongToMetadata(song: UserSong): SongMetadata {
 }
 
 function SelectSongPageContent() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [userSongs, setUserSongs] = useState<UserSong[]>([])
   const [isLoadingUserSongs, setIsLoadingUserSongs] = useState(true)
   const [isUploadModalOpen, setUploadModalOpen] = useState(false)
@@ -114,10 +114,6 @@ function SelectSongPageContent() {
     fetchUserSongs()
   }
 
-  const handleLogout = async () => {
-    await logout()
-  }
-
   const isLoading = isLoadingUserSongs
 
   return (
@@ -133,32 +129,18 @@ function SelectSongPageContent() {
         onClose={() => setUploadModalOpen(false)}
         onSuccess={handleUploadSuccess}
       />
-      <div className="flex h-screen w-full flex-col overflow-hidden bg-gray-50">
+      <div className="flex flex-col bg-gray-50 w-full h-screen overflow-hidden">
         <div className="shrink-0">
           <AppBar>
-            <div className="mr-2 flex items-center rounded-md bg-violet-500/50 px-3 py-1">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-sm text-gray-100">
-                  <User className="h-4 w-4" />
-                  <span>{user?.displayName || user?.email}</span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-gray-100 transition hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </div>
-            </div>
+            <UserMenu displayName={user?.displayName} email={user?.email} />
           </AppBar>
         </div>
         <div className="mx-auto flex min-h-0 w-full max-w-(--breakpoint-lg) flex-1 flex-col p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">Songs</h2>
+              <h2 className="font-semibold text-gray-900 text-2xl">Songs</h2>
               <Sizer height={4} />
-              <h3 className="text-sm text-gray-600">
+              <h3 className="text-gray-600 text-sm">
                 Select a song, choose your settings, and begin learning
               </h3>
             </div>
@@ -168,11 +150,11 @@ function SelectSongPageContent() {
           {/* Tabs and Search Row */}
           <div className="flex items-center gap-4">
             {/* Tabs */}
-            <div className="flex rounded-lg border border-gray-200 bg-gray-100 p-1">
+            <div className="flex bg-gray-100 p-1 border border-gray-200 rounded-lg">
               <button
                 onClick={() => setActiveTab('all')}
                 className={clsx(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition',
+                  'px-3 py-1.5 rounded-md font-medium text-sm transition',
                   activeTab === 'all'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900',
@@ -183,25 +165,25 @@ function SelectSongPageContent() {
               <button
                 onClick={() => setActiveTab('builtin')}
                 className={clsx(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition',
+                  'px-3 py-1.5 rounded-md font-medium text-sm transition',
                   activeTab === 'builtin'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900',
                 )}
               >
-                <Music className="mr-1.5 inline h-4 w-4" />
+                <Music className="inline mr-1.5 w-4 h-4" />
                 Built-in Songs ({builtinSongs.length})
               </button>
               <button
                 onClick={() => setActiveTab('uploaded')}
                 className={clsx(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition',
+                  'px-3 py-1.5 rounded-md font-medium text-sm transition',
                   activeTab === 'uploaded'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900',
                 )}
               >
-                <Upload className="mr-1.5 inline h-4 w-4" />
+                <Upload className="inline mr-1.5 w-4 h-4" />
                 My Songs ({userSongs.length})
               </button>
             </div>
@@ -213,12 +195,12 @@ function SelectSongPageContent() {
             <button
               onClick={() => setUploadModalOpen(true)}
               className={clsx(
-                'cursor-pointer flex-nowrap whitespace-nowrap',
+                'flex-nowrap whitespace-nowrap cursor-pointer',
                 'inline-flex items-center gap-2 rounded-md bg-violet-600 px-3 py-2 text-sm font-medium text-white shadow-sm',
                 'transition-colors hover:bg-violet-700',
               )}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="w-4 h-4" />
               Upload Song
             </button>
           </div>

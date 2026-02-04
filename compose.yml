@@ -1,0 +1,48 @@
+services:
+  app:
+    build: .
+    restart: always
+    environment:
+      - DB_HOST=mariadb
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - API_PORT=${API_PORT}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - UPLOAD_DIR=${UPLOAD_DIR}
+      - NODE_ENV=${NODE_ENV}
+      - VITE_PUBLIC_GA_ID=${VITE_PUBLIC_GA_ID}
+      - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+    volumes:
+      - uploads:/usr/src/app/${UPLOAD_DIR}
+    ports:
+      - '${API_PORT}:${API_PORT}'
+      - '${FRONTEND_PORT}:${FRONTEND_PORT}'
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  mariadb:
+    image: mariadb:11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --su-mysql, --connect, --innodb_initialized]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+volumes:
+  dbdata:
+  uploads:

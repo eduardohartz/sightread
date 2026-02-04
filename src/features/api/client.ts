@@ -167,6 +167,13 @@ export async function changePassword(
   })
 }
 
+export async function deleteAccount(password: string): Promise<ApiResponse<{ message: string }>> {
+  return apiFetch('/api/auth/account', {
+    method: 'DELETE',
+    body: JSON.stringify({ password }),
+  })
+}
+
 // ============================================
 // SONGS API
 // ============================================

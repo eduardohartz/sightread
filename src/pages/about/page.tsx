@@ -1,6 +1,5 @@
-import { AppBar, MarketingFooter, Sizer } from '@/components'
+import { AppBar, MarketingFooter, Sizer, UserMenu } from '@/components'
 import { useAuth } from '@/features/auth'
-import { LogOut, User } from 'lucide-react'
 import React, { PropsWithChildren } from 'react'
 import { Link, LinkProps } from 'react-router'
 import manifest from './../../manifest.json'
@@ -17,35 +16,31 @@ function SidebarLink({ children }: PropsWithChildren<{ children: string }>) {
 }
 
 export default function AboutPage() {
-  const { user, logout } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
 
-  const handleLogout = async () => {
-    await logout()
-  }
   return (
     <div className="relative">
       <title>About</title>
       <AppBar>
-        <div className="mr-2 flex items-center rounded-md bg-violet-500/50 px-3 py-1">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-gray-100">
-              <User className="h-4 w-4" />
-              <span>{user?.displayName || user?.email}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-gray-100 transition hover:bg-gray-100 hover:text-gray-900"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          </div>
-        </div>
+        {!isLoading && (
+          <>
+            {isAuthenticated ? (
+              <UserMenu displayName={user?.displayName} email={user?.email} />
+            ) : (
+              <Link
+                to="/auth"
+                className="bg-white hover:bg-violet-50 px-3 py-1.5 rounded-md font-medium text-violet-600 text-sm transition"
+              >
+                Sign In
+              </Link>
+            )}
+          </>
+        )}
       </AppBar>
       <div className="md:bg-purple-lightest">
         <div className="mx-auto flex max-w-(--breakpoint-lg)">
-          <div className="sticky top-0 hidden max-h-screen p-8 md:block">
-            <section className="mx-auto flex flex-col">
+          <div className="hidden md:block top-0 sticky p-8 max-h-screen">
+            <section className="flex flex-col mx-auto">
               <h2 className="text-3xl">About</h2>
               <Sizer height={32} />
               <ul className="flex flex-col gap-5 text-xl whitespace-nowrap">
@@ -79,8 +74,8 @@ export default function AboutPage() {
               </ul>
             </section>
           </div>
-          <div className="mx-auto my-8 w-full flex-1 bg-white p-8 text-base">
-            <div className="mx-auto flex max-w-prose flex-col gap-12">
+          <div className="flex-1 bg-white mx-auto my-8 p-8 w-full text-base">
+            <div className="flex flex-col gap-12 mx-auto max-w-prose">
               <WhatSection />
               <GettingStarted />
               <MusicSelectionSection />
@@ -188,7 +183,7 @@ function OnlineFeaturesSection() {
         This version of Sightread includes optional online functionality. When signed in, your
         uploaded songs, score history, and practice recordings are stored online. Other features:
       </p>
-      <ul className="list-disc px-12">
+      <ul className="px-12 list-disc">
         <li>
           <b>My Songs:</b> upload MIDI files to your account.
         </li>
@@ -300,7 +295,7 @@ function AttributionsSection() {
     return (
       <Link
         {...props}
-        className="cursor-pointer text-gray-800 underline-offset-4 hover:text-gray-950 hover:underline"
+        className="text-gray-800 hover:text-gray-950 hover:underline underline-offset-4 cursor-pointer"
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -320,11 +315,11 @@ function AttributionsSection() {
         We are grateful to the contributors. Below are links back to MuseScore and their respective
         copyrights. No modifications were made to the original arrangements.
       </p>
-      <ul className="list-disc pl-6">
+      <ul className="pl-6 list-disc">
         {sortedSongs.map((song) => (
           <li key={song.id} className="mb-2">
             <div className="font-semibold">{song.title}:</div>
-            <div className="ml-2 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 ml-2">
               {song.url && <MutedLink to={song.url}>[source]</MutedLink>}
               {song.license && <MutedLink to={song.license}>[license]</MutedLink>}
             </div>

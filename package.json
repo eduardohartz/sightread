@@ -76,12 +76,12 @@
     "zod": "4.3.6"
   },
   "scripts": {
-    "start": "concurrently -k -p \"{name}\" -n \"FE,API\" -c \"cyan,green\" \"npm run start:fe\" \"npm run start:api\"",
+    "start": "concurrently -k -p \"{name}\" -n \"FE,API\" -c \"cyan,green\" \"npm run start:fe -- $@\" \"npm run start:api\"",
     "build": "react-router build",
     "dev": "concurrently -k -p \"{name}\" -n \"FE,API\" -c \"cyan,green\" \"npm run dev:fe\" \"npm run dev:api\"",
     "dev:fe": "react-router dev",
     "dev:api": "tsx watch server/index.ts",
-    "start:fe": "serve -s build/client",
+    "start:fe": "eval $(grep -E '^(NODE_ENV|FRONTEND_PORT)' .env) && serve -s build/client $@ -p ${FRONTEND_PORT:-4001}",
     "start:api": "NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview --port 8080",
     "check-types": "react-router typegen && tsc",

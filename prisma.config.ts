@@ -3,6 +3,6 @@ import { defineConfig, env } from 'prisma/config'
 
 export default defineConfig({
   datasource: {
-    url: env('DATABASE_URL'),
+    url: `mysql://${env('DB_USER')}:${env('DB_PASSWORD')}@${env('DB_HOST')}:${env('DB_PORT')}/${env('DB_NAME')}`,
   },
 })

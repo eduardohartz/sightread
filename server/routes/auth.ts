@@ -229,4 +229,49 @@ router.put('/password', requireAuth, async (req: AuthenticatedRequest, res: Resp
   }
 })
 
+/**
+ * DELETE /api/auth/account
+ * Delete user account and all associated data
+ */
+router.delete('/account', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { password } = req.body
+
+    if (!password) {
+      res.status(400).json({ error: 'Password is required to delete account' })
+      return
+    }
+
+    // Get user with password
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+    })
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' })
+      return
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash)
+    if (!isValidPassword) {
+      res.status(401).json({ error: 'Incorrect password' })
+      return
+    }
+
+    // Delete user (cascades to related data)
+    await prisma.user.delete({
+      where: { id: user.id },
+    })
+
+    // Clear auth cookie
+    clearAuthCookie(res)
+
+    res.json({ message: 'Account deleted successfully' })
+  } catch (error) {
+    console.error('Delete account error:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
 export default router
