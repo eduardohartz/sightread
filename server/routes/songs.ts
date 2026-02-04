@@ -80,9 +80,10 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
  */
 router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const id = req.params.id as string
     const song = await prisma.song.findFirst({
       where: {
-        id: req.params.id,
+        id,
         userId: req.user!.userId,
       },
       select: {
@@ -114,9 +115,10 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
  */
 router.get('/:id/file', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const id = req.params.id as string
     const song = await prisma.song.findFirst({
       where: {
-        id: req.params.id,
+        id,
         userId: req.user!.userId,
       },
     })
@@ -159,7 +161,10 @@ router.post('/', upload.single('file'), async (req: AuthenticatedRequest, res: R
     try {
       const midi = new Midi(req.file.buffer)
       duration = Math.round(midi.duration)
-      noteCount = midi.tracks.reduce((sum, track) => sum + track.notes.length, 0)
+      noteCount = midi.tracks.reduce(
+        (sum: number, track: { notes: unknown[] }) => sum + track.notes.length,
+        0,
+      )
     } catch (parseError) {
       console.error('MIDI parse error:', parseError)
       res.status(400).json({ error: 'Invalid MIDI file' })
@@ -231,9 +236,10 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
     const data = songUpdateSchema.parse(req.body)
 
     // Check if song exists and belongs to user
+    const id = req.params.id as string
     const existing = await prisma.song.findFirst({
       where: {
-        id: req.params.id,
+        id,
         userId: req.user!.userId,
       },
     })
@@ -244,7 +250,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const song = await prisma.song.update({
-      where: { id: req.params.id },
+      where: { id },
       data: {
         title: data.title,
       },
@@ -277,9 +283,10 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response) => {
 router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Check if song exists and belongs to user
+    const id = req.params.id as string
     const song = await prisma.song.findFirst({
       where: {
-        id: req.params.id,
+        id,
         userId: req.user!.userId,
       },
     })

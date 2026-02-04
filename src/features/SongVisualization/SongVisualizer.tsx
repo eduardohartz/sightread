@@ -1,8 +1,10 @@
 import { Canvas } from '@/components'
+import { keyboardRangeAtom } from '@/features/midi'
 import * as touchscroll from '@/features/SongVisualization/touchscroll'
 import { transposeKeySignature } from '@/features/theory'
 import { useSize } from '@/hooks'
 import { Hand, Song, SongConfig } from '@/types'
+import { useAtomValue } from 'jotai'
 import { LegacyRef, useEffect, useMemo, useRef } from 'react'
 import { usePlayer } from '../player'
 import { GivenState, render } from './canvas-renderer'
@@ -42,6 +44,7 @@ function CanvasRenderer({
   const { width, height, measureRef } = useSize()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const player = usePlayer()
+  const keyboardRange = useAtomValue(keyboardRangeAtom)
 
   useEffect(() => {
     waitForImages().then(() => (isReady.current = true))
@@ -83,13 +86,14 @@ function CanvasRenderer({
       selectedRange,
       game,
       player,
+      keyboardRange,
     }
     render(state)
   }
 
   return (
     <div
-      className="absolute h-full w-full touch-none"
+      className="absolute w-full h-full touch-none"
       ref={measureRef}
       onPointerMove={(e) => enableTouchscroll && touchscroll.handleMove(player, e.nativeEvent)}
       onPointerDown={(e) => enableTouchscroll && touchscroll.handleDown(player, e.nativeEvent)}

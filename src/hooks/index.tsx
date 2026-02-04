@@ -1,4 +1,5 @@
 export { default as useEventListener } from './useEventListener'
+export { useFullscreen } from './useFullscreen'
 export { default as useMidiInputs } from './useMidiInputs'
 export { default as useMidiOutputs } from './useMidiOutputs'
 export { default as useOnUnmount } from './useOnUnmount'

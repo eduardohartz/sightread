@@ -389,9 +389,10 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
  */
 router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const id = req.params.id as string
     const score = await prisma.songScore.findFirst({
       where: {
-        id: req.params.id,
+        id,
         userId: req.user!.userId,
       },
     })

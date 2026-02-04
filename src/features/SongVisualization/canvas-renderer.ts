@@ -1,3 +1,4 @@
+import { KeyboardRange } from '@/features/midi'
 import { KEY_SIGNATURE, NOTE_LABELS } from '@/features/theory'
 import { Hand, HandSettings } from '@/types'
 import { Player } from '../player'
@@ -27,6 +28,7 @@ export type GivenState = {
   selectedRange?: { start: number; end: number }
   game: boolean
   player: Player
+  keyboardRange?: KeyboardRange
 }
 
 export function render(state: Readonly<GivenState>) {

@@ -157,12 +157,23 @@ export function renderFallingVis(givenState: GivenState): void {
     state.pianoMeasurements,
     state.pianoTopY,
     getActiveNotes(state, items.filter((i) => i.type === 'note') as any),
+    state.keyboardRange,
   )
 }
 
 function getNoteColor(state: State, note: SongNote): string {
+  const transposed = getTransposedMidi(state, note)
+
+  // Check if note is outside keyboard range - return grey color
+  if (state.keyboardRange) {
+    const { start, end } = state.keyboardRange
+    if (transposed < start || transposed > end) {
+      return isBlack(transposed) ? '#3a3a3a' : '#4a4a4a'
+    }
+  }
+
   const hand = state.hands[note.track]?.hand ?? 'both'
-  const keyType = isBlack(getTransposedMidi(state, note)) ? 'black' : 'white'
+  const keyType = isBlack(transposed) ? 'black' : 'white'
 
   let color
   if (hand === 'both' || hand === 'right') {
@@ -257,7 +268,18 @@ export function renderFallingNote(note: SongNote, state: State): void {
   const minLengthToDisplayLetter = getFontSize(ctx, '', (width * 2) / 3).height + 15
   const length = Math.floor(Math.max(actualLength, minLengthToDisplayLetter))
 
+  // Check if note is outside keyboard range
+  const isOutOfRange = state.keyboardRange
+    ? transposed < state.keyboardRange.start || transposed > state.keyboardRange.end
+    : false
+
   ctx.save()
+
+  // Apply reduced opacity for out-of-range notes
+  if (isOutOfRange) {
+    ctx.globalAlpha = 0.4
+  }
+
   ctx.fillStyle = color
   ctx.strokeStyle = 'rgb(40,40,40)'
   roundRect(ctx, posX, posY, width, length)

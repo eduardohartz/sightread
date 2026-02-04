@@ -1,9 +1,11 @@
 import { Tooltip } from '@/components'
 import { PickInstrument } from '@/features/controls'
 import { InstrumentName } from '@/features/synth'
+import { useFullscreen } from '@/hooks'
 import { ArrowLeft, KeyboardMusic, StartRecord, StopRecord } from '@/icons'
 import { ButtonWithTooltip } from '@/pages/play/components/TopBar'
 import clsx from 'clsx'
+import { Maximize, Minimize } from 'lucide-react'
 import React, { MouseEvent } from 'react'
 import { TooltipTrigger } from 'react-aria-components'
 import { Link } from 'react-router'
@@ -28,12 +30,13 @@ export default function TopBar({
   onClickRecord,
 }: TopBarProps) {
   const recordTooltip = isRecordingAudio ? 'Stop recording' : 'Start recording audio'
+  const { isFullscreen, toggleFullscreen, exitFullscreen } = useFullscreen()
 
   return (
-    <div className="relative z-10 h-14 w-screen border-b border-[#20222a] bg-[#15161b] px-4">
-      <div className="flex h-full items-center gap-4 text-white">
+    <div className="z-10 relative bg-[#15161b] px-4 border-[#20222a] border-b w-screen h-14">
+      <div className="flex items-center gap-4 h-full text-white">
         <ButtonWithTooltip tooltip="Back">
-          <Link to="/songs">
+          <Link to="/songs" onClick={exitFullscreen}>
             <ArrowLeft size={24} />
           </Link>
         </ButtonWithTooltip>
@@ -50,6 +53,13 @@ export default function TopBar({
         >
           MIDI
         </PillActionButton>
+        <ButtonWithTooltip
+          tooltip={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          isActive={isFullscreen}
+          onClick={toggleFullscreen}
+        >
+          {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+        </ButtonWithTooltip>
         <PickInstrument
           className="w-auto min-w-40"
           isLoading={isLoading}

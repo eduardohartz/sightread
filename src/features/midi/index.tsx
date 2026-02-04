@@ -5,6 +5,53 @@ import * as tonejs from '@tonejs/midi'
 import { atom, getDefaultStore } from 'jotai'
 import { useRef, useState } from 'react'
 
+// Keyboard range configuration
+// Standard 88-key piano: A0 (21) to C8 (108)
+export const MIDI_NOTE_A0 = 21
+export const MIDI_NOTE_C8 = 108
+
+export type KeyboardRange = {
+  start: number // lowest MIDI note (default: 21 = A0)
+  end: number // highest MIDI note (default: 108 = C8)
+}
+
+const KEYBOARD_RANGE_STORAGE_KEY = 'KEYBOARD_RANGE'
+
+function loadKeyboardRange(): KeyboardRange {
+  if (!isBrowser()) {
+    return { start: MIDI_NOTE_A0, end: MIDI_NOTE_C8 }
+  }
+  try {
+    const stored = localStorage.getItem(KEYBOARD_RANGE_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (typeof parsed.start === 'number' && typeof parsed.end === 'number') {
+        return parsed
+      }
+    }
+  } catch {}
+  return { start: MIDI_NOTE_A0, end: MIDI_NOTE_C8 }
+}
+
+function saveKeyboardRange(range: KeyboardRange) {
+  if (!isBrowser()) return
+  try {
+    localStorage.setItem(KEYBOARD_RANGE_STORAGE_KEY, JSON.stringify(range))
+  } catch {}
+}
+
+export const keyboardRangeAtom = atom<KeyboardRange>(loadKeyboardRange())
+
+export function setKeyboardRange(range: KeyboardRange) {
+  const store = getDefaultStore()
+  store.set(keyboardRangeAtom, range)
+  saveKeyboardRange(range)
+}
+
+export function isNoteInKeyboardRange(midiNote: number, range: KeyboardRange): boolean {
+  return midiNote >= range.start && midiNote <= range.end
+}
+
 export async function getMidiInputs(): Promise<MIDIInputMap> {
   if (!isBrowser() || !window.navigator.requestMIDIAccess) {
     return new Map()

@@ -4,7 +4,7 @@ import { transposeMidi } from '@/features/theory'
 import { MidiStateEvent, Song, SongConfig, SongMeasure, SongNote } from '@/types'
 import { clamp, getHands, round } from '@/utils'
 import { atom, Atom, getDefaultStore, PrimitiveAtom } from 'jotai'
-import midi from '../midi'
+import midi, { keyboardRangeAtom } from '../midi'
 import { getSynth, Synth } from '../synth'
 
 function increment(x: number) {
@@ -286,6 +286,23 @@ export class Player {
     )
   }
 
+  /**
+   * Checks if a note (transposed) is within the user's keyboard range.
+   * Notes outside the range should be ignored for scoring purposes.
+   */
+  isNoteInKeyboardRange(note: SongNote): boolean {
+    const keyboardRange = this.store.get(keyboardRangeAtom)
+    const transposedMidi = this.getTransposedMidi(note.midiNote)
+    return transposedMidi >= keyboardRange.start && transposedMidi <= keyboardRange.end
+  }
+
+  /**
+   * Checks if a note should be scored (is active hand AND is in keyboard range)
+   */
+  shouldScoreNote(note: SongNote): boolean {
+    return this.isActiveHand(note) && this.isNoteInKeyboardRange(note)
+  }
+
   getTime() {
     const offset = 0 // getAudioContext().outputLatency
     const song = this.getSong()
@@ -496,7 +513,8 @@ export class Player {
     while (song.notes[this.currentIndex]?.time < time) {
       const note = song.notes[this.currentIndex]
 
-      if (this.isActiveHand(note)) {
+      // Use shouldScoreNote to check both active hand AND keyboard range
+      if (this.shouldScoreNote(note)) {
         if (this.wait && !this.hitNotes.has(note)) {
           this.currentSongTime = note.time
           return
@@ -506,7 +524,7 @@ export class Player {
         }
       }
       this.playing.push(note)
-      if (!this.skipMissedNotes || !this.isActiveHand(note) || isHitNote(this, note)) {
+      if (!this.skipMissedNotes || !this.shouldScoreNote(note) || isHitNote(this, note)) {
         this.playNote(note)
       }
       this.currentIndex++

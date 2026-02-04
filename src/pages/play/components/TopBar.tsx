@@ -1,6 +1,8 @@
 import { Tooltip } from '@/components'
+import { useFullscreen } from '@/hooks'
 import { ArrowLeft, BarChart2, KeyboardMusic, Settings } from '@/icons'
 import clsx from 'clsx'
+import { Maximize, Minimize } from 'lucide-react'
 import React, { MouseEvent, PropsWithChildren } from 'react'
 import { Button, TooltipTrigger } from 'react-aria-components'
 
@@ -25,24 +27,31 @@ export default function TopBar({
   isSettingsOpen,
   onToggleSettings,
 }: TopBarProps) {
+  const { isFullscreen, toggleFullscreen, exitFullscreen } = useFullscreen()
+
+  const handleBack = () => {
+    exitFullscreen()
+    onClickBack()
+  }
+
   return (
-    <div className="relative z-10 h-14 w-screen border-b border-[#20222a] bg-[#15161b] px-4">
-      <div className="flex h-full items-center justify-between">
+    <div className="z-10 relative bg-[#15161b] px-4 border-[#20222a] border-b w-screen h-14">
+      <div className="flex justify-between items-center h-full">
         <div className="flex items-center gap-3">
-          <ButtonWithTooltip tooltip="Back" onClick={onClickBack}>
+          <ButtonWithTooltip tooltip="Back" onClick={handleBack}>
             <ArrowLeft size={24} />
           </ButtonWithTooltip>
           <div className="flex flex-col">
             {title && (
               <span
-                className="max-w-[320px] truncate text-sm font-semibold text-white"
+                className="max-w-[320px] font-semibold text-white text-sm truncate"
                 title={title}
               >
                 {title}
               </span>
             )}
             {subtitle && (
-              <span className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+              <span className="font-medium text-gray-500 text-xs uppercase tracking-wider">
                 {subtitle}
               </span>
             )}
@@ -58,6 +67,13 @@ export default function TopBar({
           </ButtonWithTooltip>
           <ButtonWithTooltip tooltip="Choose a MIDI device" onClick={onClickMidi}>
             <KeyboardMusic size={24} />
+          </ButtonWithTooltip>
+          <ButtonWithTooltip
+            tooltip={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            isActive={isFullscreen}
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
           </ButtonWithTooltip>
           <ButtonWithTooltip
             tooltip="Settings"

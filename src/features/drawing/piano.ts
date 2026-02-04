@@ -79,9 +79,15 @@ export async function drawPianoRoll(
   measurements: PianoRollMeasurements,
   pianoTopY: number,
   activeNotes: Map<number, Color>,
+  keyboardRange?: { start: number; end: number },
 ) {
   const { whiteHeight, whiteNoteSeparation, blackHeight, lanes } = measurements
   ctx.save()
+
+  const isNoteInRange = (midiNote: number) => {
+    if (!keyboardRange) return true
+    return midiNote >= keyboardRange.start && midiNote <= keyboardRange.end
+  }
 
   // Render all the white, then render all the black.
   const whiteNotes = Object.entries(lanes).filter(([midiNote]) => !isBlack(+midiNote))
@@ -94,7 +100,9 @@ export async function drawPianoRoll(
   ctx.fillRect(0, pianoTopY, measurements.pianoWidth, whiteHeight + 5)
   for (let [midiNote, lane] of whiteNotes) {
     const { left, width } = lane
-    ctx.fillStyle = whiteKeyBackground
+    const inRange = isNoteInRange(+midiNote)
+    // Grey out keys outside keyboard range
+    ctx.fillStyle = inRange ? whiteKeyBackground : 'rgb(120, 120, 120)'
     const heightPressedOffset = activeNotes.has(+midiNote) ? 2 : 0
     const height = whiteHeight + heightPressedOffset
     roundRect(ctx, left, pianoTopY, width - whiteNoteSeparation, height, {
@@ -104,7 +112,7 @@ export async function drawPianoRoll(
     const isC = getKey(+midiNote) == 'C'
     if (isC) {
       const octave = getOctave(+midiNote)
-      ctx.fillStyle = 'rgb(190,190,190)'
+      ctx.fillStyle = inRange ? 'rgb(190,190,190)' : 'rgb(80,80,80)'
       ctx.font = `${width * 0.65}px ${TEXT_FONT}`
       const txt = `C${octave}`
       const { width: textWidth } = ctx.measureText(txt)
@@ -117,7 +125,7 @@ export async function drawPianoRoll(
       )
     }
     const activeColor = activeNotes.get(+midiNote)
-    if (activeColor) {
+    if (activeColor && inRange) {
       ctx.fillStyle = activeColor
       roundRect(ctx, left, pianoTopY, width - whiteNoteSeparation, height, {
         topRadius: 0,
@@ -128,11 +136,12 @@ export async function drawPianoRoll(
 
   for (let [midiNote, lane] of blackNotes) {
     let { left, width, whiteMiddle } = lane
+    const inRange = isNoteInRange(+midiNote)
     // No real reason why cornerWidth is set to white note separator.
     // Just think it looks OK.
     const cornerWidth = measurements.whiteNoteSeparation
     ctx.strokeStyle = 'transparent'
-    ctx.fillStyle = 'black'
+    ctx.fillStyle = inRange ? 'black' : 'rgb(60, 60, 60)'
     ctx.fillRect(left - 2, pianoTopY, width + 3, blackHeight + 2)
 
     roundCorner(
@@ -153,12 +162,20 @@ export async function drawPianoRoll(
     )
 
     const isPressed = activeNotes.has(+midiNote)
-    ctx.fillStyle = activeNotes.get(+midiNote) ?? 'black'
+    ctx.fillStyle = activeNotes.get(+midiNote) ?? (inRange ? 'black' : 'rgb(60, 60, 60)')
     const images = getImages()
     let img = isPressed ? images.blackKeyPressed : images.blackKeyRaised
     let posY = isPressed ? pianoTopY : pianoTopY - 2
+
+    if (!inRange) {
+      ctx.globalAlpha = 0.5
+    }
     ctx.drawImage(img, left, posY, width, blackHeight)
-    if (activeNotes.has(+midiNote)) {
+    if (!inRange) {
+      ctx.globalAlpha = 1
+    }
+
+    if (activeNotes.has(+midiNote) && inRange) {
       ctx.globalCompositeOperation = 'overlay'
       ctx.fillRect(left, posY, width, blackHeight)
       ctx.globalCompositeOperation = 'source-over'
