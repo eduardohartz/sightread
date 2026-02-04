@@ -20,7 +20,7 @@ export function MarketingFooter() {
       </h2>
       <MaxWidthWrapper className="mx-auto w-full py-4">
         <div className="text-muted-foreground text-center text-xs sm:text-left">
-          © 2025 Eduardo Hartz.{' '}
+          © 2026 Eduardo Hartz.{' '}
           <a href="https://eduardohartz.dev" target="_blank" className="text-violet-600">
             See what else I made!
           </a>
